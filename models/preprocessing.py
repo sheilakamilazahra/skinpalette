@@ -12,19 +12,20 @@ def run_data_preprocessing(df):
     # Normalisasi format teks kategori produk
     df['product_type'] = df['product_type'].str.strip().str.title()
     
-    # Standarisasi kolom harga (Cleansing Simbol £, $ atau koma)
+    # Standarisasi kolom harga
     if 'price' in df.columns:
-        if df['price'].dtype == object:
-            df['numeric_price'] = (
-                df['price']
-                .str.replace('£', '', regex=False)
-                .str.replace('$', '', regex=False)
-                .str.replace(',', '', regex=False)
-                .str.strip()
-            )
-            df['numeric_price'] = pd.to_numeric(df['numeric_price'], errors='coerce')
-        else:
-            df['numeric_price'] = df['price'].astype(float)
+        # Kita paksa ubah dulu ke string untuk membersihkan simbol, apapun tipe data awalnya
+        clean_price = (
+            df['price']
+            .astype(str)
+            .str.replace('£', '', regex=False)
+            .str.replace('$', '', regex=False)
+            .str.replace(',', '', regex=False)
+            .str.strip()
+        )
+        
+        # Mengubah ke numerik secara aman (jika ada teks aneh otomatis diubah jadi NaN, gak bikin crash)
+        df['numeric_price'] = pd.to_numeric(clean_price, errors='coerce')
             
         # Imputasi: Ganti data harga kosong dengan Median harga dari jenis produk sejenis
         df['numeric_price'] = df.groupby('product_type')['numeric_price'].transform(
